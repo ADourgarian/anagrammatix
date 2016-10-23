@@ -8,7 +8,7 @@ var path = require('path');
 var app = express();
 
 // Import the Anagrammatix game file.
-var agx = require('./agxgame');
+var agx = require('./tanksio');
 
 // Create a simple Express application
 app.configure(function() {
@@ -33,5 +33,3 @@ io.sockets.on('connection', function (socket) {
     //console.log('client connected');
     agx.initGame(io, socket);
 });
-
-
