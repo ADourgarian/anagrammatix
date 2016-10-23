@@ -24,7 +24,7 @@ jQuery(function($){
          */
         bindEvents : function() {
           // io is a global defined by /socket.io/socket.io.js
-          var socket = io();
+          var socket = IO.socket;
           var C = {};
           var log = 1;
           var frameObject = {};

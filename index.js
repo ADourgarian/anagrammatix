@@ -7,8 +7,8 @@ var path = require('path');
 // Create a new instance of Express
 var app = express();
 
-// Import the Anagrammatix game file.
-var agx = require('./tanksio');
+// Import the tanksio game file.
+var tio = require('./tanksio');
 
 // Create a simple Express application
 app.configure(function() {
@@ -20,7 +20,7 @@ app.configure(function() {
 });
 
 // Create a Node.js based http server on port 8080
-var server = require('http').createServer(app).listen(process.env.PORT || 8080);
+var server = require('http').createServer(app).listen(process.env.PORT || 3000);
 
 // Create a Socket.IO server and attach it to the http server
 var io = require('socket.io').listen(server);
@@ -31,5 +31,5 @@ io.set('log level',1);
 // Listen for Socket.IO Connections. Once connected, start the game logic.
 io.sockets.on('connection', function (socket) {
     //console.log('client connected');
-    agx.initGame(io, socket);
+    tio.initGame(io, socket);
 });
