@@ -45,24 +45,48 @@ jQuery(function($){
           objectsClient.projectiles = [];
           var logger = 0;
 
-          //Create the renderer
-          var renderer = PIXI.autoDetectRenderer(256, 256);
-
-          //Add the canvas to the HTML document
-          document.body.appendChild(renderer.view);
-
-          //Create a container object called the `stage`
-          var stage = new PIXI.Container();
-
-          //Tell the `renderer` to `render` the `stage`
-          renderer.render(stage);
-
 
           socket.emit('getConstants');
           socket.on('constants',function(constants){
             C = constants;
             console.log(C);
             start = 1;
+            //Create the renderer
+            var renderer = PIXI.autoDetectRenderer(256, 256);
+            renderer = PIXI.autoDetectRenderer(
+              C.width, C.height,
+              {antialias: false, transparent: false, resolution: 1}
+            );
+
+            PIXI.loader
+                .add("../images/gridTile.png")
+                .load(setup);
+
+            function setup() {
+              console.log(C.width,C.height);
+              //Create the `cat` sprite from the texture
+              var tile = new PIXI.TilingSprite(
+                PIXI.loader.resources["../images/gridTile.png"].texture,
+                C.dimensions.maxX - C.dimensions.minX,
+                C.dimensions.maxY - C.dimensions.minY + 25
+              );
+
+              //Add the cat to the stage
+              stage.addChild(tile);
+
+              //Render the stage
+              renderer.render(stage);
+            }
+
+            //Add the canvas to the HTML document
+            document.body.appendChild(renderer.view);
+
+            //Create a container object called the `stage`
+            var stage = new PIXI.Container();
+
+            //Tell the `renderer` to `render` the `stage`
+            renderer.render(stage);
+
           })
 
           socket.on('linkStart', function(obj){
