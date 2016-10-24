@@ -1,6 +1,7 @@
 var io;
 var gameSocket;
 var c = require('./Constants');
+var objects = require('./modules/objectLibrary.js');
 
 /**
  * This function is called by index.js to initialize a new game instance.
@@ -8,8 +9,20 @@ var c = require('./Constants');
  * @param sio The Socket.IO library
  * @param socket The socket object for the connected client.
  */
-exports.initGame = function(sio, socket){
-    io = sio;
+exports.initGame = function(io){
+    // Broadcast current state of game objects
+    var resetFrame = setInterval(function(){
+    objects.updateProjectiles(objects.projectileList);
+    var pack = {players: objects.players};
+    pack.projectileList = objects.projectileList;
+
+    var string = JSON.stringify(pack);
+    io.sockets.emit('frame', string);
+
+    objects.projectileList.removeNumber = 0;
+    }, 20);
+
+io.on('connection', function(socket) {
     console.log('Connected socket.io client ' + socket.id);
 
     socket.on('getConstants', function(){
@@ -63,7 +76,7 @@ exports.initGame = function(sio, socket){
         objects.players[player.id] = object;
       }
     })
-
+  });
 }
 
 /* *******************************

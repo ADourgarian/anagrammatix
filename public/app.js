@@ -1,4 +1,4 @@
-;
+
 jQuery(function($){
     'use strict';
 
@@ -44,48 +44,59 @@ jQuery(function($){
           objectsClient.players = [];
           objectsClient.projectiles = [];
           var logger = 0;
+          var mousedown = 0;
+          $('body').mousedown(function() {
+            mousedown = 1;
+          });
+          $('body').mouseup(function() {
+            mousedown = 0;
+          });
 
+          //Create the renderer
+          var renderer = PIXI.autoDetectRenderer(256, 256);
+          renderer = PIXI.autoDetectRenderer(
+            C.width, C.height,
+            {antialias: false, transparent: false, resolution: 1}
+          );
+
+          //Add the canvas to the HTML document
+          document.body.appendChild(renderer.view);
+
+          //Create a container object called the `stage`
+          var stage = new PIXI.Container();
+
+          //Tell the `renderer` to `render` the `stage`
+          renderer.render(stage);
 
           socket.emit('getConstants');
           socket.on('constants',function(constants){
             C = constants;
             console.log(C);
             start = 1;
-            //Create the renderer
-            var renderer = PIXI.autoDetectRenderer(256, 256);
-            renderer = PIXI.autoDetectRenderer(
-              C.width, C.height,
-              {antialias: false, transparent: false, resolution: 1}
-            );
 
             PIXI.loader
                 .add("../images/gridTile.png")
+                .add("../images/red_circle_medium.png")
+                .add("../images/red_circle_small.png")
                 .load(setup);
 
             function setup() {
-              console.log(C.width,C.height);
               //Create the `cat` sprite from the texture
               var tile = new PIXI.TilingSprite(
                 PIXI.loader.resources["../images/gridTile.png"].texture,
                 C.dimensions.maxX - C.dimensions.minX,
                 C.dimensions.maxY - C.dimensions.minY + 25
               );
-
               //Add the cat to the stage
               stage.addChild(tile);
 
               //Render the stage
               renderer.render(stage);
+
+              socket.emit('onStart');
+
             }
 
-            //Add the canvas to the HTML document
-            document.body.appendChild(renderer.view);
-
-            //Create a container object called the `stage`
-            var stage = new PIXI.Container();
-
-            //Tell the `renderer` to `render` the `stage`
-            renderer.render(stage);
 
           })
 
@@ -180,14 +191,10 @@ jQuery(function($){
 
           // send move every 20 ms
           var move = setInterval(function(){
-            if (game.input.activePointer.isDown && fireNumber > fireRate) {
+
+            if (mousedown && fireNumber > fireRate) {
               fireNumber = 0;
-              if (game.input.mousePointer.x){
-                coordinates.x = game.input.mousePointer.x;
-              }
-              if (game.input.mousePointer.y) {
-                coordinates.y = game.input.mousePointer.y;
-              }
+
               var newProjectile = objectsLibrary.newProjectile(objectsServer.players[playerFrame.id], coordinates);
               socket.emit('move', JSON.stringify(playerFrame), JSON.stringify(newProjectile));
 
@@ -204,6 +211,8 @@ jQuery(function($){
               updateGame();
             }
             if (logger> 600){
+              console.log('frameObject',frameObject);
+              console.log('objectsClient',frameObject);
               logger = 0;
               log = 1;
             } else {
@@ -218,8 +227,18 @@ jQuery(function($){
             for (var i in frameObject.players) {
               if (!objectsClient.players[i]) {
                 objectsServer.players[i] = frameObject.players[i];
-                var player = game.add.sprite(frameObject.players[i].X_pos, frameObject.players[i].Y_pos, 'red_circle_medium');
-                objectsClient.players.push(player);
+                var playerSprite = new PIXI.Sprite(
+                  PIXI.loader.resources["../images/red_circle_medium.png"].texture
+                );
+                playerSprite.x = Math.floor(Math.random()*10* C.dimensions.maxX - C.dimensions.minX + 50)
+                playerSprite.y = Math.floor(Math.random()*10* C.dimensions.maxY - C.dimensions.minY + 50)
+                //Add the cat to the stage
+                stage.addChild(playerSprite);
+
+                //Render the stage
+                renderer.render(stage);
+
+                objectsClient.players.push(playerSprite);
                 console.log("client players",objectsClient.players);
               } else {
                 if (log === 1){
@@ -228,6 +247,7 @@ jQuery(function($){
                 objectsServer.players[playerFrame.id] = frameObject.players[playerFrame.id];
                 objectsClient.players[i].x = frameObject.players[i].X_pos;
                 objectsClient.players[i].y = frameObject.players[i].Y_pos;
+                renderer.render(stage);
               }
             }
             //update projectiles
@@ -244,8 +264,17 @@ jQuery(function($){
             for (var i = 0; i < frameObject.projectileList.projectiles.length; i++) {
               if (frameObject.projectileList.projectiles.length - objectsServer.projectiles.length > 0) {
                 objectsServer.projectiles.push(frameObject.projectileList.projectiles[i]);
-                var projectile = game.add.sprite(frameObject.projectileList.projectiles[i].X_pos, frameObject.projectileList.projectiles[i].Y_pos, 'red_circle_small');
-                objectsClient.projectiles.push(projectile);
+
+                var projectileSprite = new PIXI.Sprite(
+                  PIXI.loader.resources["../images/red_circle_small.png"].texture
+                );
+                projectileSprite.x = frameObject.projectileList.projectiles[i].X_pos;
+                projectileSprite.y = frameObject.projectileList.projectiles[i].Y_pos;
+
+                stage.addChild(projectileSprite);
+
+                renderer.render(stage);
+                objectsClient.projectiles.push(projectileSprite);
               } else {
                 objectsClient.projectiles[i].x = frameObject.projectileList.projectiles[i].X_pos;
                 objectsClient.projectiles[i].y = frameObject.projectileList.projectiles[i].Y_pos;
@@ -476,7 +505,6 @@ jQuery(function($){
             myName: '',
             onJoinClick: function () {
                 // console.log('Clicked "Join A Game"');
-                socket.emit('onStart');
                 // Display the Join Game HTML on the player's screen.
                 //App.$gameArea.html(App.$templateJoinGame);
             },
